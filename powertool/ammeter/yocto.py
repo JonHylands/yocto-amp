@@ -8,9 +8,9 @@ from collections import defaultdict
 from yoctopuce.yocto_api import YAPI, YRefParam, YModule
 from yoctopuce.yocto_current import YCurrent
 
-from sample_source import SampleSource, SampleSourceNoDeviceError
-from device_manager import DeviceManager
-from sample import Sample
+from ..sample_source import SampleSource, SampleSourceNoDeviceError
+from ..device_manager import DeviceManager
+from ..sample import Sample
 
 # the name of the SampleSource class to use
 SampleSourceClass = 'YoctoAmmeter'

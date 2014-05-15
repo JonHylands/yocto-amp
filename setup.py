@@ -13,7 +13,7 @@ version = {}
 execfile(os.path.join('powertool', 'version.py'), version)
 
 # dependencies
-deps = ['yoctopuce==1.01.12553', 'pyserial']
+deps = ['yoctopuce==1.01.12553', 'pyserial', 'mozdevice']
 
 setup(name='powertool',
       version=version['__version__'],
@@ -25,7 +25,7 @@ setup(name='powertool',
       author_email='jhylands@mozilla.com, dhuseby@mozilla.com',
       url='https://developer.mozilla.org/en-US/Firefox_OS/Performance/Power',
       license='MPL',
-      packages=['powertool'],
+      packages=find_packages(),
       zip_safe=False,
       entry_points={'console_scripts': [
           'powertool = powertool.powertool:main']},

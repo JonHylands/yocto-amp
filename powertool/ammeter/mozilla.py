@@ -10,10 +10,10 @@ import sys
 import threading
 import time
 
-from sample_source import SampleSource
-from device_manager import DeviceManager
-from sample import Sample
-from time_utils import now_in_millis
+from ..sample_source import SampleSource, SampleSourceNoDeviceError
+from ..device_manager import DeviceManager
+from ..sample import Sample
+from ..time_utils import now_in_millis
 from serial.tools import list_ports
 
 # the name of the SampleSource class to use
@@ -50,7 +50,8 @@ class MozillaDevice(threading.Thread):
         super(MozillaDevice, self).__init__()
         self._path = path
         if path == None:
-            self._path = self._scanForDevice()
+            self._path = self.get_device_paths()[0]
+            print "Found Mozilla Ammeter attached to: %s" % self._path
         else:
             self._path = path
         self._cmds = Queue.Queue()
@@ -60,35 +61,35 @@ class MozillaDevice(threading.Thread):
         self._async = async
 
         if self._async:
-            self._responseSize = self.ASYNC_RESPONSE_SIZE
+            self._response_size = self.ASYNC_RESPONSE_SIZE
             # start the thread
             super(MozillaDevice, self).start()
         else:
-            self._responseSize = self.SYNC_RESPONSE_SIZE
+            self._response_size = self.SYNC_RESPONSE_SIZE
 
-    def _scanForDevice(self):
+    @classmethod
+    def get_device_paths(cls):
         # get the list of os-specific serial port names that have a Mozilla ammeter connected to them
         ports = [p[0] for p in serial.tools.list_ports.comports() if p[2].lower().startswith('usb vid:pid=03eb:204b')]
         if len(ports) > 0:
-            print "Found Mozilla Ammeter attached to: %s" % ports[0]
-            return ports[0]
+            return ports
         raise SampleSourceNoDeviceError('mozilla')
 
-    def sendCommand(self, cmd):
+    def send_command(self, cmd):
         """ adds a command to the command queue """
         self._cmds.put_nowait(cmd)
 
-    def getPacket(self):
+    def get_packet(self):
         # We use this when we're running in sync mode
         self._module.write(self.GET_SAMPLE)
         self._module.flush()
-        return self._module.read(self._responseSize)
+        return self._module.read(self._response_size)
 
     @property
     def packet(self):
         try:
             if not self._async:
-                self._packets.append( self._module.read(self._responseSize) )
+                self._packets.append( self._module.read(self._response_size) )
             # this is atomic
             return self._packets.popleft()
         except:
@@ -102,7 +103,7 @@ class MozillaDevice(threading.Thread):
     def quit(self):
         if self._async:
             # send STOP_ASYNC command to wake up the worker thread, if needed
-            self.sendCommand(self.STOP_ASYNC)
+            self.send_command(self.STOP_ASYNC)
 
         # set the quit flag, all remaining commands will be processed before
         # the thread function exits
@@ -119,7 +120,7 @@ class MozillaDevice(threading.Thread):
         """ This is run in a separate thread """
 
         # start off by putting the START_ASYNC command in the command queue
-        self.sendCommand(MozillaDevice.START_ASYNC)
+        self.send_command(MozillaDevice.START_ASYNC)
 
         while True:
             if not self._cmds.empty():
@@ -143,7 +144,7 @@ class MozillaDevice(threading.Thread):
                 return
 
             # read a packet from the device and queue it up
-            self._packets.append( self._module.read(self._responseSize) )
+            self._packets.append( self._module.read(self._response_size) )
 
 
 class MozillaPacketHandler(threading.Thread):
@@ -159,17 +160,17 @@ class MozillaPacketHandler(threading.Thread):
         self._async = async
 
         if self._async:
-            self._packetSize = self.ASYNC_PACKET_SIZE
+            self._packet_size = self.ASYNC_PACKET_SIZE
             # start the thread
             super(MozillaPacketHandler, self).start()
         else:
-            self._packetSize = self.SYNC_PACKET_SIZE
+            self._packet_size = self.SYNC_PACKET_SIZE
 
     @property
     def sample(self):
         try:
             if not self._async:
-                self.processPacket(self._device.getPacket())
+                self.process_packet(self._device.get_packet())
             # this is atomic
             return self._samples.popleft()
         except:
@@ -185,29 +186,29 @@ class MozillaPacketHandler(threading.Thread):
         if self._async:
             super(MozillaPacketHandler, self).join()
 
-    def processPacket(self, data):
+    def process_packet(self, data):
         # sanity check
-        packetLength = len(data)
-        if packetLength != self._packetSize:
-            print >> sys.stderr, "Packet is not %d bytes long - %d bytes" % (self._packetSize, packetLength)
+        packet_length = len(data)
+        if packet_length != self._packet_size:
+            print >> sys.stderr, "Packet is not %d bytes long - %d bytes" % (self._packet_size, packet_length)
             return
 
         # unpack the first sample from the packet
-        dataPortion = data[5:packetLength-1]
-        packetCount = (packetLength - 6) / 8
-        for index in range(0, packetCount):
-            startIndex = index * 8
-            endIndex = startIndex + 8
-            sampleBytes = dataPortion[startIndex:endIndex]
-            
+        data_portion = data[5:packet_length-1]
+        packet_count = (packet_length - 6) / 8
+        for index in range(0, packet_count):
+            start_index = index * 8
+            end_index = start_index + 8
+            sample_bytes = data_portion[start_index:end_index]
+
             # get the current in mA
-            current = int((ord(sampleBytes[0]) + (ord(sampleBytes[1]) * 256)) / 10)
+            current = int((ord(sample_bytes[0]) + (ord(sample_bytes[1]) * 256)) / 10)
             if (current > 32767):
                 current = (65536 - current) * -1;
 
             # get the voltage in mV
-            voltage = ord(sampleBytes[2]) + (ord(sampleBytes[3]) * 256)
-            time = ord(sampleBytes[4]) + (ord(sampleBytes[5]) * 256) + (ord(sampleBytes[6]) * 65536) + (ord(sampleBytes[7]) * 16777216)
+            voltage = ord(sample_bytes[2]) + (ord(sample_bytes[3]) * 256)
+            time = ord(sample_bytes[4]) + (ord(sample_bytes[5]) * 256) + (ord(sample_bytes[6]) * 65536) + (ord(sample_bytes[7]) * 16777216)
 
             self._samples.append({'current':current, 'voltage':voltage, 'time':time})
 
@@ -226,7 +227,7 @@ class MozillaPacketHandler(threading.Thread):
                 time.sleep(0.1)
                 continue
 
-            self.processPacket(data)
+            self.process_packet(data)
 
 
 class MozillaAmmeter(SampleSource, DeviceManager):
@@ -248,7 +249,7 @@ class MozillaAmmeter(SampleSource, DeviceManager):
     def names(self):
         return ('current','voltage', 'time')
 
-    def getSample(self, names):
+    def get_sample(self, names):
         # get a sample
         sample = self._handler.sample
 
@@ -265,21 +266,20 @@ class MozillaAmmeter(SampleSource, DeviceManager):
         self._device.quit()
 
     # FIXME: refactor this to use an ADBDeviceManager mixin eventually
-    def startCharging(self, charge_complete):
+    def start_charging(self, charge_complete):
         pass
 
-    def stopCharging(self):
+    def stop_charging(self):
         pass
 
-    def disconnectUSB(self):
+    def disconnect_usb(self):
         pass
 
-    def connectUSB(self):
+    def connect_usb(self):
         pass
 
-    def hardPowerOff(self):
-        self._device.sendCommand(MozillaDevice.TURN_OFF_BATTERY)
+    def hard_power_off(self):
+        self._device.send_command(MozillaDevice.TURN_OFF_BATTERY)
 
-    def hardPowerOn(self):
-        self._device.sendCommand(MozillaDevice.TURN_ON_BATTERY)
-
+    def hard_power_on(self):
+        self._device.send_command(MozillaDevice.TURN_ON_BATTERY)

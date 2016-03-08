@@ -24,6 +24,9 @@ class SampleSource(object):
     @classmethod
     def create(cls, devices, path):
         for device in devices:
+
+            print "* Running for device {0}".format(device)
+
             try:
                 # import the module
                 m = importlib.import_module('.'.join(['powertool',device]))

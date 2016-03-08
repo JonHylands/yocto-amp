@@ -49,5 +49,5 @@ Plug in your ammeter device, and hook it up to the battery harness for your devi
 
 For example, to use a Yoctopuce USB ammeter, you can use this command line, which allows to use the Tkinter library and to save the results in a CSV file:
 ```
-powertool -d yocto -u tk -o ex.csv
+$ powertool -d yocto -u tk -o ex.csv
 ```

@@ -13,12 +13,12 @@ from test_suite_saver import TestSuiteSaver
 from ui import UI
 
 def main():
-    
+
     try:
         # set up and parse arguments
         parser = argparse.ArgumentParser(description='Mozilla Powertool')
-        parser.add_argument('-d', '--device', type=str,  default=['mozilla','yocto'], 
-                            choices=['yocto','mozilla'], action='append',
+        parser.add_argument('-d', '--device', type=str, nargs='+',
+                            choices=['yocto','mozilla'], required=True,
                             help="specify ammeter device to use")
         parser.add_argument('-p', '--path', type=str, default=None,
                             help="specify path to ammeter device (e.g. /dev/ttyACM0)")
@@ -31,7 +31,7 @@ def main():
 
         # create the sample source
         source = SampleSource.create( args.device, args.path )
-        
+
         # create the test suite
         suite = TestSuite.create( args.file )
 
@@ -52,7 +52,7 @@ def main():
 
         # shut down the sample source
         source.close()
-        
+
         sys.exit(0)
 
     except Exception, e:
@@ -60,4 +60,3 @@ def main():
         print >> sys.stderr, "\nException:\n from %s, line %d:\n %s\n" % (frame[1], frame[2], e)
         parser.print_help()
         sys.exit(1)
-

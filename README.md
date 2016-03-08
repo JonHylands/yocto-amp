@@ -23,12 +23,14 @@ The first step is to clone this repo:
 $ git clone git://github.com/JonHylands/fxos-powertool
 ```
 
-Then isntall the application and dependencies:
+Then install the application and dependencies:
 
 ```sh
 $ cd fxos-powertool
 $ sudo python ./setup.py install
 ```
+
+Make sure you have the [Tkinter](https://wiki.python.org/moin/TkInter) library for Python if you want to specify the UI as ```tk```.
 
 Write your test suite description file.  There is an example in the examples folder.  It is a JSON file that looks like this:
 
@@ -44,3 +46,8 @@ Write your test suite description file.  There is an example in the examples fol
 ```
 
 Plug in your ammeter device, and hook it up to the battery harness for your device.  Then launch the powertool to begin testing.
+
+For example, to use a Yoctopuce USB ammeter, you can use this command line, which allows to use the Tkinter library and to save the results in a CSV file:
+```
+powertool -d yocto -u tk -o ex.csv
+```

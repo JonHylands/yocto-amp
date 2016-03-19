@@ -43,7 +43,7 @@ def main():
         saver = TestSuiteSaver.create( args.out )
 
         # create the displayer
-        ui = UI.create( args.ui, suite, args.show )
+        ui = UI.create( args.ui, suite, args.begin_experiments, args.show )
 
         # run the app
         ui.run()

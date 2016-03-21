@@ -23,7 +23,7 @@ APP_NAME = "JON - FxOS Powertool -- "
 class TkUI(UI, SuiteRunner):
     """ This implements a Tk GUI interface for displaying samples """
 
-    def __init__(self, suite, show=None):
+    def __init__(self, suite, begin_experiments, show=None):
         global BOTTOM_SIDE
         super(TkUI, self).__init__()
         self._suite = suite
@@ -64,6 +64,10 @@ class TkUI(UI, SuiteRunner):
         self._root.bind("<Key>", self._keyEvent)
 
         self._reset()
+
+        # Begin experiments as soon as the UI has been initialized
+        if begin_experiments:
+            self._startStopTest()
 
     def _reset(self):
         self._xPos = 0

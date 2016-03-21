@@ -26,6 +26,7 @@ def main():
                             choices=['tk','cli', 'web', 'simple'], help="specify which UI to use")
         parser.add_argument('-f', '--file', type=str, default=None, help="test run config file")
         parser.add_argument('-o', '--out', type=str, default=None, help="output data file")
+        parser.add_argument('-b', '--begin_experiments', action="store_true", help="begin experiments as soon as the UI has been displayed")
         parser.add_argument('-s', '--show', type=str, default='current', help="name of the sample source to display")
         args = parser.parse_args()
 
@@ -42,7 +43,7 @@ def main():
         saver = TestSuiteSaver.create( args.out )
 
         # create the displayer
-        ui = UI.create( args.ui, suite, args.show )
+        ui = UI.create( args.ui, suite, args.begin_experiments, args.show )
 
         # run the app
         ui.run()

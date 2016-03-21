@@ -32,7 +32,7 @@ class TkUI(UI, SuiteRunner):
 
         self._root = Tk()
         BOTTOM_SIDE = min(BOTTOM_SIDE, self._root.winfo_screenheight() - 50)
-        
+
         # set the application window title
         self._updateTitle()
 
@@ -81,7 +81,7 @@ class TkUI(UI, SuiteRunner):
         self._drawInitialMainCanvas()
 
     def _updateTitle(self):
-        self._root.title(APP_NAME + " -- Test: " + 
+        self._root.title(APP_NAME + " -- Test: " +
                          self._suite.tests[self._test_index])
 
     def _drawCurrentLine(self):
@@ -106,7 +106,7 @@ class TkUI(UI, SuiteRunner):
         sample = samples.get(self._show, None)
 
         if sample != None:
-            # add it to 
+            # add it to
             newYPosition = ZERO_LINE - round(sample.value / SCALE_FACTOR)
 
             # log the sample
@@ -157,7 +157,7 @@ class TkUI(UI, SuiteRunner):
             self._mainCanvas.config(scrollregion=(0, 0, self._xPos, BOTTOM_SIDE))
             self._yPos = newYPosition
             self._prevValue = sample.value
-        
+
         # set a timer to call this function again
         drawTime = int(now_in_millis() - startTime)
         waitTime = max(FRAME_DELAY - drawTime, 0)
@@ -226,7 +226,7 @@ class TkUI(UI, SuiteRunner):
             self._suite.stopTest()
         except Exception, e:
             print("failed to stop test: %s" % e)
-        
+
     def nextTest(self):
         if self._test_index + 1 < len(self._suite.tests):
             self._test_index += 1
@@ -238,4 +238,3 @@ class TkUI(UI, SuiteRunner):
             self._test_index -= 1
         self._reset()
         self._updateTitle()
-
